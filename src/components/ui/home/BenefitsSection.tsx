@@ -1,6 +1,7 @@
 "use client";
 
-import { FaBullseye, FaWallet, FaMobileAlt, FaChartLine } from 'react-icons/fa';
+import { useState } from 'react';
+import { FaBullseye, FaWallet, FaMobileAlt, FaChartLine, FaHandshake, FaLightbulb, FaGlobe } from 'react-icons/fa';
 
 type BenefitProps = {
   icon: React.ReactNode;
@@ -21,7 +22,9 @@ function BenefitItem({ icon, title, description }: BenefitProps) {
 }
 
 export default function BenefitsSection() {
-  const benefits = [
+  const [activeTab, setActiveTab] = useState<'advertisers' | 'creators'>('advertisers');
+
+  const advertiserBenefits = [
     {
       icon: <FaBullseye />,
       title: "Audience Ciblée",
@@ -44,11 +47,61 @@ export default function BenefitsSection() {
     }
   ];
 
+  const creatorBenefits = [
+    {
+      icon: <FaHandshake />,
+      title: "Partenariats Directs",
+      description: "Collaborez directement avec des marques sans intermédiaire et négociez vos propres tarifs."
+    },
+    {
+      icon: <FaWallet />,
+      title: "Revenus Garantis",
+      description: "Recevez vos paiements de façon sécurisée via Mobile Money dès que votre contenu est validé."
+    },
+    {
+      icon: <FaLightbulb />,
+      title: "Liberté Créative",
+      description: "Gardez le contrôle sur votre contenu et choisissez les marques qui correspondent à vos valeurs."
+    },
+    {
+      icon: <FaGlobe />,
+      title: "Visibilité Accrue",
+      description: "Développez votre audience et votre notoriété grâce à des collaborations avec des marques locales et internationales."
+    }
+  ];
+
+  const benefits = activeTab === 'advertisers' ? advertiserBenefits : creatorBenefits;
+
   return (
-    <section id="advertisers" className="py-16 bg-gray-50">
+    <section id="benefits" className="py-16 bg-gray-50">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
+        <div className="text-center mb-8">
           <h2 className="text-3xl font-bold text-gray-900 mb-4">Pourquoi choisir AfroPush ?</h2>
+        </div>
+
+        <div className="flex justify-center mb-10">
+          <div className="flex bg-white rounded-full p-1 shadow-md">
+            <button
+              onClick={() => setActiveTab('advertisers')}
+              className={`px-5 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                activeTab === 'advertisers' 
+                  ? 'bg-primary text-white' 
+                  : 'bg-transparent text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              Pour les Annonceurs
+            </button>
+            <button
+              onClick={() => setActiveTab('creators')}
+              className={`px-5 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                activeTab === 'creators' 
+                  ? 'bg-primary text-white' 
+                  : 'bg-transparent text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              Pour les Créateurs
+            </button>
+          </div>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

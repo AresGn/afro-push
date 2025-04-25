@@ -21,9 +21,8 @@ export default function Navbar() {
 
         {/* Desktop Navigation */}
         <ul className="navbar-desktop-links">
-          <li><Link href="#features" className="navbar-link">Fonctionnalités</Link></li>
-          <li><Link href="#creators" className="navbar-link">Pour les Créateurs</Link></li>
-          <li><Link href="#advertisers" className="navbar-link">Pour les Annonceurs</Link></li>
+          <li><Link href="#features" className="navbar-link">Comment ça marche ?</Link></li>
+          <li><Link href="#creators" className="navbar-link">Nos Créateurs</Link></li>
           <li><Link href="#pricing" className="navbar-link">Tarifs</Link></li>
         </ul>
 
@@ -51,8 +50,7 @@ export default function Navbar() {
         <div className="navbar-mobile-menu">
           <ul className="navbar-mobile-links">
             <li><Link href="#features" className="navbar-mobile-link" onClick={toggleMobileMenu}>Fonctionnalités</Link></li>
-            <li><Link href="#creators" className="navbar-mobile-link" onClick={toggleMobileMenu}>Pour les Créateurs</Link></li>
-            <li><Link href="#advertisers" className="navbar-mobile-link" onClick={toggleMobileMenu}>Pour les Annonceurs</Link></li>
+            <li><Link href="#creators" className="navbar-mobile-link" onClick={toggleMobileMenu}>Nos Créateurs</Link></li>
             <li><Link href="#pricing" className="navbar-mobile-link" onClick={toggleMobileMenu}>Tarifs</Link></li>
             <li className="navbar-mobile-actions">
               <Link href="/login" className="navbar-mobile-login-btn" onClick={toggleMobileMenu}>
