@@ -1,26 +1,120 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
+/* Variables */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --primary-color: #FF5A00;
+  --primary-dark: #E05000;
+  --primary-light: #FF7A30;
+  --secondary-color: #1A1A1A;
+  --text-color: #333333;
+  --text-light: #666666;
+  --background-light: #F8F9FA;
+  --background-white: #FFFFFF;
+  --border-color: #E5E7EB;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+/* Base styles */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  body {
+    color: var(--text-color);
+    background-color: var(--background-white);
+    font-family: 'Inter', sans-serif;
+    margin: 0;
+    padding: 0;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: bold;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Custom components */
+@layer components {
+  .container {
+    @apply px-4 mx-auto max-w-7xl;
+  }
+  
+  .button {
+    @apply inline-flex items-center justify-center rounded-md font-medium transition-all duration-150;
+  }
+
+  .button--primary {
+    @apply bg-primary text-white px-6 py-3 hover:bg-primary-dark;
+  }
+
+  .button--outline {
+    @apply border border-gray-300 text-gray-700 px-6 py-3 hover:bg-gray-50;
+  }
+
+  .button--sm {
+    @apply px-4 py-2 text-sm;
+  }
+}
+
+.min-h-screen {
+  min-height: 100vh;
+}
+
+.flex {
+  display: flex;
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.flex-grow {
+  flex-grow: 1;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.py-16 {
+  padding-top: 4rem;
+  padding-bottom: 4rem;
+}
+
+.text-3xl {
+  font-size: 1.875rem;
+}
+
+.font-bold {
+  font-weight: 700;
+}
+
+.mb-4 {
+  margin-bottom: 1rem;
+}
+
+/* Utilities */
+.text-primary {
+  color: var(--primary-color);
+}
+
+.bg-primary {
+  background-color: var(--primary-color);
+}
+
+.border-primary {
+  border-color: var(--primary-color);
+}
+
+.bg-primary\/5 {
+  background-color: rgba(255, 90, 0, 0.05);
+}
+
+.bg-primary\/10 {
+  background-color: rgba(255, 90, 0, 0.1);
+}
+
+.border-primary\/10 {
+  border-color: rgba(255, 90, 0, 0.1);
 }

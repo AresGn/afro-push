@@ -1,29 +1,25 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import "./globals.css";
-import Navigation from "@/components/Navigation";
-import Footer from "@/components/Footer";
+import './globals.css';
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
+import ScrollToTopButton from '@/components/ui/ScrollToTopButton';
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: "AfroPush | Connectez les créateurs africains avec les annonceurs",
-  description: "Plateforme pour connecter les créateurs de contenu africains avec des annonceurs locaux et internationaux",
+  title: 'AfroPush - Marketing d\'Influence Accessible en Afrique',
+  description: 'Connectez-vous avec des créateurs de contenu africains pour promouvoir votre entreprise à moindre coût via AfroPush. Paiements Mobile Money disponibles.',
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html lang="fr">
-      <body className={inter.className}>
-        <Navigation />
-        <div className="pt-16">
-          {children}
-        </div>
-        <Footer />
+    <html lang="fr" className="scroll-smooth">
+      <body className={`${inter.className} antialiased text-text bg-background-white`}>
+        {children}
+        <ScrollToTopButton />
       </body>
     </html>
   );
