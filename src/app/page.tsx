@@ -8,6 +8,8 @@ import BenefitsSection from '@/components/ui/home/BenefitsSection';
 import PricingSection from '@/components/ui/home/PricingSection';
 import FaqSection from '@/components/ui/home/FaqSection';
 import StatsSection from '@/components/ui/home/StatsSection';
+import MobileOperatorsSection from '@/components/ui/home/MobileOperatorsSection';
+import TestimonialsSection from '@/components/ui/home/TestimonialsSection';
 import Footer from '@/components/layout/Footer';
 import PageTransition from '@/components/ui/PageTransition';
 
@@ -21,6 +23,8 @@ export default function Home() {
           <FeaturesSection />
           <CreatorsSection />
           <BenefitsSection />
+          <MobileOperatorsSection />
+          <TestimonialsSection />
           <PricingSection />
           <StatsSection />
           <FaqSection />

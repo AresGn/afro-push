@@ -233,3 +233,48 @@ Les routes API sont regroupées par domaine fonctionnel, facilitant l'intégrati
 
 Cette architecture vous donne une base solide pour développer votre MVP tout en maintenant la possibilité d'évoluer facilement vers une application plus complexe à mesure que votre base d'utilisateurs grandit.
 
+
+
+
+Parfait ! Puisque vous avez déjà créé la base de données "afropush", voici les commandes pour créer les tables à partir de votre schéma Prisma :
+
+## Option 1 : Utiliser `db push` (pour prototypage rapide)
+
+C'est la méthode la plus simple pour créer rapidement les tables sans générer de fichiers de migration :
+
+```bash
+cd afro-push
+npx prisma db push
+```
+
+Cette commande va :
+- Créer toutes les tables définies dans votre schéma
+- Générer le client Prisma
+- Ne pas créer de fichiers de migration
+
+## Option 2 : Utiliser `migrate dev` (recommandé pour la production)
+
+Si vous souhaitez suivre les bonnes pratiques et garder un historique des migrations :
+
+```bash
+cd afro-push
+npx prisma migrate dev --name init
+```
+
+Cette commande va :
+- Créer toutes les tables définies dans votre schéma
+- Générer le client Prisma
+- Créer un dossier `migrations` avec le script SQL exécuté
+- Permettre le suivi des changements et faciliter les déploiements
+
+## Vérifier que les tables ont bien été créées
+
+Pour vérifier visuellement vos tables et données, vous pouvez utiliser Prisma Studio :
+
+```bash
+npx prisma studio
+```
+
+Prisma Studio ouvrira une interface web (généralement à l'adresse http://localhost:5555) où vous pourrez voir toutes vos tables et ajouter/modifier des données.
+
+Si vous souhaitez ajouter des données de test après la création des tables, vous pourriez utiliser un script de seed. Je peux vous aider à en créer un si nécessaire.
