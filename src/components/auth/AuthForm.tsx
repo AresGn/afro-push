@@ -5,8 +5,8 @@ import { FaGoogle, FaFacebookF, FaTwitter } from 'react-icons/fa';
 import Link from 'next/link';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import axios from 'axios';
-import { toast } from 'react-toastify';
+import { handleAuthError } from '@/lib/auth-error-handler';
+import { fetchData } from '@/lib/fetchData';
 
 type UserRole = 'CREATOR' | 'ADVERTISER';
 type AuthMode = 'login' | 'register';
@@ -24,6 +24,7 @@ const AuthForm: React.FC<AuthFormProps> = ({
   const [authMode, setAuthMode] = useState<AuthMode>(initialMode);
   const [role, setRole] = useState<UserRole>('CREATOR');
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
   // Form fields
   const [name, setName] = useState('');
@@ -36,35 +37,29 @@ const AuthForm: React.FC<AuthFormProps> = ({
   
   const isLogin = authMode === 'login';
   const isCreator = role === 'CREATOR';
-  
-  const handleSocialLogin = async (provider: string) => {
-    setIsLoading(true);
-    try {
-      await signIn(provider, {
-        callbackUrl: '/'
-      });
-    } catch (error) {
-      console.error(`Error during ${provider} login:`, error);
-      toast.error(`Échec de connexion avec ${provider}`);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
+    setErrorMessage(null);
+
     try {
       if (isLogin) {
-        // Login with credentials - use redirect: true to avoid CLIENT_FETCH_ERROR
-        await signIn('credentials', {
+        // Login via NextAuth
+        const result = await signIn('credentials', {
+          redirect: false,
           email,
           password,
-          redirect: true,
-          callbackUrl: '/'
         });
-        // Le redirect est géré par NextAuth, pas besoin de router.push
+
+        if (result?.error) {
+          setErrorMessage(handleAuthError(new Error(result.error), 'Identifiants incorrects. Veuillez réessayer.'));
+          setIsLoading(false);
+          return;
+        }
+
+        // Si connecté avec succès, rediriger vers la page d'accueil
+        router.push('/dashboard');
       } else {
         // Register new user
         const userData = {
@@ -72,34 +67,51 @@ const AuthForm: React.FC<AuthFormProps> = ({
           email,
           password,
           role,
-          ...(isCreator ? { socialMedia } : { companyName })
+          ...(role === 'ADVERTISER' ? { companyName } : {}),
+          ...(role === 'CREATOR' ? { socialMedia } : {})
         };
-        
-        const response = await axios.post('/api/auth/register', userData);
-        
-        if (response.data.success) {
-          // Auto login after registration - use redirect: true to avoid CLIENT_FETCH_ERROR
-          toast.success("Compte créé avec succès!");
-          await signIn('credentials', {
-            email,
-            password,
-            redirect: true,
-            callbackUrl: '/'
-          });
+
+        // Use the new fetchData utility
+        const { success, error } = await fetchData('/api/users/register', {
+          method: 'POST',
+          body: userData,
+        });
+
+        if (!success) {
+          throw new Error(error || 'Une erreur est survenue lors de l\'inscription');
         }
+
+        // Connexion automatique après inscription
+        const signInResult = await signIn('credentials', {
+          redirect: false,
+          email,
+          password,
+        });
+
+        if (signInResult?.error) {
+          // Si l'inscription a réussi mais que la connexion a échoué
+          setErrorMessage('Inscription réussie, mais la connexion a échoué. Veuillez vous connecter manuellement.');
+          router.push('/login');
+          return;
+        }
+
+        // Redirection après inscription et connexion
+        router.push('/dashboard');
       }
-    } catch (error: unknown) {
-      console.error('Authentication error:', error);
-      let errorMessage = isLogin ? "Échec de connexion" : "Échec d'inscription";
-      
-      if (axios.isAxiosError(error) && error.response?.data?.error) {
-        errorMessage = error.response.data.error;
-      } else if (error instanceof Error) {
-        errorMessage = error.message;
-      }
-      
-      toast.error(errorMessage);
+    } catch (error) {
+      setErrorMessage(handleAuthError(error, 'Une erreur inattendue s\'est produite. Veuillez réessayer.'));
     } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSocialLogin = async (provider: string) => {
+    try {
+      setIsLoading(true);
+      await signIn(provider, { callbackUrl: '/dashboard' });
+    } catch (error) {
+      console.error(`Erreur lors de la connexion avec ${provider}:`, error);
+      setErrorMessage(handleAuthError(error, `Erreur de connexion avec ${provider}. Veuillez réessayer.`));
       setIsLoading(false);
     }
   };
@@ -132,11 +144,19 @@ const AuthForm: React.FC<AuthFormProps> = ({
                   </p>
                 </div>
                 
+                {/* Error message */}
+                {errorMessage && (
+                  <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg">
+                    {errorMessage}
+                  </div>
+                )}
+                
                 {/* Toggle between login and register */}
                 {!isLogin && (
                   <div className="flex justify-center mb-6">
                     <div className="bg-gray-100 p-1 rounded-lg inline-flex">
                       <button
+                        type="button"
                         onClick={() => setRole('CREATOR')}
                         className={`px-4 py-2 text-sm rounded-md ${
                           isCreator 
@@ -147,6 +167,7 @@ const AuthForm: React.FC<AuthFormProps> = ({
                         Créateur
                       </button>
                       <button
+                        type="button"
                         onClick={() => setRole('ADVERTISER')}
                         className={`px-4 py-2 text-sm rounded-md ${
                           !isCreator 
@@ -162,28 +183,31 @@ const AuthForm: React.FC<AuthFormProps> = ({
 
                 {/* Social Login Buttons */}
                 <div className="space-y-3 mb-4">
-                  <button 
+                  <button
+                    type="button"
                     onClick={() => handleSocialLogin('google')}
-                    disabled={isLoading}
                     className="flex items-center justify-center w-full p-3 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition duration-200"
+                    disabled={isLoading}
                   >
                     <FaGoogle className="text-red-500 mr-3" />
                     <span>{isLogin ? 'Continuer' : 'S\'inscrire'} avec Google</span>
                   </button>
                   
-                  <button 
+                  <button
+                    type="button"
                     onClick={() => handleSocialLogin('facebook')}
-                    disabled={isLoading}
                     className="flex items-center justify-center w-full p-3 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition duration-200"
+                    disabled={isLoading}
                   >
                     <FaFacebookF className="text-blue-600 mr-3" />
                     <span>{isLogin ? 'Continuer' : 'S\'inscrire'} avec Facebook</span>
                   </button>
                   
-                  <button 
+                  <button
+                    type="button"
                     onClick={() => handleSocialLogin('twitter')}
-                    disabled={isLoading}
                     className="flex items-center justify-center w-full p-3 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition duration-200"
+                    disabled={isLoading}
                   >
                     <FaTwitter className="text-black mr-3" />
                     <span>{isLogin ? 'Continuer' : 'S\'inscrire'} avec X</span>
@@ -210,6 +234,7 @@ const AuthForm: React.FC<AuthFormProps> = ({
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"
                         placeholder="Votre nom complet"
                         required
+                        disabled={isLoading}
                       />
                     </div>
                   )}
@@ -225,6 +250,7 @@ const AuthForm: React.FC<AuthFormProps> = ({
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"
                       placeholder="Votre adresse email"
                       required
+                      disabled={isLoading}
                     />
                   </div>
                   
@@ -239,6 +265,7 @@ const AuthForm: React.FC<AuthFormProps> = ({
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"
                       placeholder={isLogin ? "Votre mot de passe" : "Minimum 8 caractères"}
                       required
+                      disabled={isLoading}
                     />
                   </div>
                   
@@ -254,6 +281,7 @@ const AuthForm: React.FC<AuthFormProps> = ({
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"
                         placeholder="Nom de votre entreprise"
                         required
+                        disabled={isLoading}
                       />
                     </div>
                   )}
@@ -267,6 +295,7 @@ const AuthForm: React.FC<AuthFormProps> = ({
                         onChange={(e) => setSocialMedia(e.target.value)}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"
                         required
+                        disabled={isLoading}
                       >
                         <option value="">Choisir une plateforme</option>
                         <option value="instagram">Instagram</option>
@@ -289,6 +318,7 @@ const AuthForm: React.FC<AuthFormProps> = ({
                           checked={rememberMe}
                           onChange={(e) => setRememberMe(e.target.checked)}
                           className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                          disabled={isLoading}
                         />
                         <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
                           Se souvenir de moi
@@ -309,6 +339,7 @@ const AuthForm: React.FC<AuthFormProps> = ({
                         onChange={(e) => setAcceptTerms(e.target.checked)}
                         className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
                         required
+                        disabled={isLoading}
                       />
                       <label htmlFor="terms" className="ml-2 block text-sm text-gray-700">
                         J&apos;accepte les <Link href="/terms" className="text-primary">conditions d&apos;utilisation</Link> et la <Link href="/privacy" className="text-primary">politique de confidentialité</Link>
@@ -320,12 +351,12 @@ const AuthForm: React.FC<AuthFormProps> = ({
                   <div>
                     <button
                       type="submit"
+                      className="w-full py-3 px-4 bg-primary text-white rounded-lg hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition duration-200"
                       disabled={isLoading}
-                      className="w-full py-3 px-4 bg-primary text-white rounded-lg hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition duration-200 disabled:opacity-70"
                     >
                       {isLoading 
                         ? 'Chargement...' 
-                        : (isLogin ? 'Se connecter' : 'S\'inscrire')}
+                        : isLogin ? 'Se connecter' : 'S\'inscrire'}
                     </button>
                   </div>
                 </form>
@@ -337,8 +368,10 @@ const AuthForm: React.FC<AuthFormProps> = ({
                       <>
                         Pas encore de compte?{' '}
                         <button 
+                          type="button"
                           onClick={() => setAuthMode('register')}
                           className="font-medium text-primary hover:text-primary-dark"
+                          disabled={isLoading}
                         >
                           Inscrivez-vous
                         </button>
@@ -347,8 +380,10 @@ const AuthForm: React.FC<AuthFormProps> = ({
                       <>
                         Déjà inscrit?{' '}
                         <button 
+                          type="button"
                           onClick={() => setAuthMode('login')}
                           className="font-medium text-primary hover:text-primary-dark"
+                          disabled={isLoading}
                         >
                           Connectez-vous
                         </button>

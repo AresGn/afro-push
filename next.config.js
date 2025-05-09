@@ -1,13 +1,18 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   /* config options here */
+  reactStrictMode: true,
   experimental: {
     turbo: {
-      resolveAlias: {
-        // Fixes Tailwind CSS v4 compatibility issues
-        tailwindcss: 'tailwindcss/lib/tailwindcss.js',
+      rules: {
+        // Vos règles turbo ici
       },
     },
+  },
+  images: {
+    domains: [
+      // Vos domaines pour les images (si nécessaires)
+    ],
   },
 };
 

@@ -278,3 +278,6 @@ npx prisma studio
 Prisma Studio ouvrira une interface web (généralement à l'adresse http://localhost:5555) où vous pourrez voir toutes vos tables et ajouter/modifier des données.
 
 Si vous souhaitez ajouter des données de test après la création des tables, vous pourriez utiliser un script de seed. Je peux vous aider à en créer un si nécessaire.
+
+
+PAvcqOCIwhscdGuX   SUPABASE

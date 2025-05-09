@@ -64,30 +64,52 @@ export const authConfig: Parameters<typeof NextAuth>[0] = {
     newUser: '/register'
   },
   callbacks: {
-    async session({ session, user }: { session: Session; user: User }) {
-      if (session.user) {
-        // Add user data from database to session
-        const userData = await prisma.user.findUnique({
-          where: { id: user.id },
-          include: {
-            creatorProfile: true,
-            advertiserProfile: true
+    async session({ session, user, token }: { session: Session; user?: User; token?: JWT }) {
+      try {
+        if (session.user) {
+          // Si nous avons un token mais pas d'utilisateur (JWT strategy), on copie les infos du token
+          if (token && !user) {
+            session.user.id = token.id as string;
+            session.user.role = token.role;
+            return session;
           }
-        });
 
-        if (userData) {
-          session.user.id = userData.id;
-          session.user.role = userData.role as UserRole;
-          session.user.creatorProfile = userData.creatorProfile;
-          session.user.advertiserProfile = userData.advertiserProfile;
+          // Si nous avons un utilisateur (database strategy), on charge les données
+          if (user) {
+            try {
+              const userData = await prisma.user.findUnique({
+                where: { id: user.id },
+                include: {
+                  creatorProfile: true,
+                  advertiserProfile: true
+                }
+              });
+
+              if (userData) {
+                session.user.id = userData.id;
+                session.user.role = userData.role as UserRole;
+                session.user.creatorProfile = userData.creatorProfile;
+                session.user.advertiserProfile = userData.advertiserProfile;
+              }
+            } catch (dbError) {
+              console.error("Erreur lors du chargement du profil utilisateur:", dbError);
+              // Continuer avec les informations minimales de session
+            }
+          }
         }
+      } catch (error) {
+        console.error("Erreur dans le callback de session:", error);
       }
       return session;
     },
     async jwt({ token, user }: { token: JWT; user?: User }) {
-      if (user) {
-        token.id = user.id;
-        token.role = user.role;
+      try {
+        if (user) {
+          token.id = user.id;
+          token.role = user.role;
+        }
+      } catch (error) {
+        console.error("Erreur dans le callback JWT:", error);
       }
       return token;
     }
@@ -113,33 +135,57 @@ export const authConfig: Parameters<typeof NextAuth>[0] = {
         password: { label: 'Password', type: 'password' }
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
+        try {
+          if (!credentials?.email || !credentials?.password) {
+            return null;
+          }
+
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email }
+          });
+
+          if (!user || !user.password) {
+            return null;
+          }
+
+          const passwordMatch = await compare(credentials.password as string, user.password as string);
+
+          if (!passwordMatch) {
+            return null;
+          }
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role
+          };
+        } catch (error) {
+          console.error("Erreur lors de l'authentification par credentials:", error);
           return null;
         }
-
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email }
-        });
-
-        if (!user || !user.password) {
-          return null;
-        }
-
-        const passwordMatch = await compare(credentials.password as string, user.password as string);
-
-        if (!passwordMatch) {
-          return null;
-        }
-
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role
-        };
       }
     })
   ],
 };
 
-export const { handlers, auth, signIn, signOut } = NextAuth(authConfig); 
+// Wrapper try-catch pour éviter que les erreurs ne soient fatales
+const safeNextAuth = () => {
+  try {
+    return NextAuth(authConfig);
+  } catch (error) {
+    console.error("Erreur lors de l'initialisation de NextAuth:", error);
+    // Retourner un objet minimal compatible avec NextAuth
+    return {
+      handlers: {
+        GET: async () => new Response(JSON.stringify({ error: "Auth service unavailable" }), { status: 500 }),
+        POST: async () => new Response(JSON.stringify({ error: "Auth service unavailable" }), { status: 500 }),
+      },
+      auth: async () => null,
+      signIn: async () => ({ error: "Auth service unavailable" }),
+      signOut: async () => false,
+    };
+  }
+};
+
+export const { handlers, auth, signIn, signOut } = safeNextAuth(); 

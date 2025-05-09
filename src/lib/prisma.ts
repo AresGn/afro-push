@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '../generated/prisma';
 
 // Prevent multiple instances of Prisma Client in development
 declare global {
@@ -6,7 +6,10 @@ declare global {
   var prisma: PrismaClient | undefined;
 }
 
-export const prisma = global.prisma || new PrismaClient();
+// Utilisation d'une méthode d'initialisation plus fiable pour Next.js
+export const prisma = global.prisma || new PrismaClient({
+  log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
+});
 
 if (process.env.NODE_ENV !== 'production') {
   global.prisma = prisma;
