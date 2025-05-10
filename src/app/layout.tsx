@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import ScrollToTopButton from '@/components/ui/ScrollToTopButton';
 import { SessionProvider } from '@/providers/SessionProvider';
+import { Providers } from "./providers"
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -20,8 +21,10 @@ export default function RootLayout({
     <html lang="fr" className="scroll-smooth">
       <body className={`${inter.className} antialiased text-text bg-background-white`}>
         <SessionProvider>
-          {children}
-          <ScrollToTopButton />
+          <Providers>
+            {children}
+            <ScrollToTopButton />
+          </Providers>
         </SessionProvider>
       </body>
     </html>
